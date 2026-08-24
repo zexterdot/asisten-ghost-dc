@@ -49,6 +49,7 @@ async def on_ready():
         'cogs.games',
         'cogs.economy',
         'cogs.leaderboard',
+        'cogs.voice',
     ]
     for cog in cog_list:
         try:
