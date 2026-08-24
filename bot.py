@@ -141,23 +141,31 @@ async def on_message_delete(message):
             content = content[:1021] + "..."
         embed.add_field(name="💬 Isi Pesan", value=content, inline=False)
 
+        # Download attachments before they expire
+        files = []
         if message.attachments:
-            image_set = False
             attachments_info = []
             for att in message.attachments:
-                # Check if it's an image
-                if att.content_type and att.content_type.startswith("image/") and not image_set:
-                    embed.set_image(url=att.proxy_url)
-                    image_set = True
-                    attachments_info.append(f"🖼️ {att.filename}")
-                else:
-                    attachments_info.append(f"📎 [{att.filename}]({att.proxy_url})")
+                try:
+                    file_bytes = await att.read()
+                    files.append(discord.File(
+                        fp=__import__('io').BytesIO(file_bytes),
+                        filename=att.filename,
+                    ))
+                    # If it's an image, show it in embed
+                    if att.content_type and att.content_type.startswith("image/") and len(files) == 1:
+                        embed.set_image(url=f"attachment://{att.filename}")
+                        attachments_info.append(f"🖼️ {att.filename}")
+                    else:
+                        attachments_info.append(f"📎 {att.filename}")
+                except Exception:
+                    attachments_info.append(f"❌ {att.filename} (gagal download)")
             embed.add_field(name="📁 Attachments", value="\n".join(attachments_info), inline=False)
 
         embed.set_thumbnail(url=message.author.display_avatar.url)
         embed.set_footer(text=f"Message ID: {message.id}")
 
-        await owner.send(embed=embed)
+        await owner.send(embed=embed, files=files if files else None)
 
     except Exception as e:
         print(f"[ERROR] Error sending delete log: {e}")
