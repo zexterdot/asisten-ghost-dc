@@ -142,8 +142,17 @@ async def on_message_delete(message):
         embed.add_field(name="💬 Isi Pesan", value=content, inline=False)
 
         if message.attachments:
-            attachments_info = "\n".join([f"📎 {att.filename}" for att in message.attachments])
-            embed.add_field(name="📁 Attachments", value=attachments_info, inline=False)
+            image_set = False
+            attachments_info = []
+            for att in message.attachments:
+                # Check if it's an image
+                if att.content_type and att.content_type.startswith("image/") and not image_set:
+                    embed.set_image(url=att.proxy_url)
+                    image_set = True
+                    attachments_info.append(f"🖼️ {att.filename}")
+                else:
+                    attachments_info.append(f"📎 [{att.filename}]({att.proxy_url})")
+            embed.add_field(name="📁 Attachments", value="\n".join(attachments_info), inline=False)
 
         embed.set_thumbnail(url=message.author.display_avatar.url)
         embed.set_footer(text=f"Message ID: {message.id}")
