@@ -262,10 +262,19 @@ class AdventureCog(commands.Cog):
             pet_xp = random.randint(5, 15)
             _, pet_level_up = await db.add_pet_xp(active_pet["id"], pet_xp)
 
-        # Boss floor progression
+        # Floor progression
+        floor_advanced = False
         if battle["is_boss"]:
+            # Boss always advances floor
             new_floor = battle["floor_num"] + 1
             await db.update_floor(interaction.user.id, interaction.guild.id, new_floor)
+            floor_advanced = True
+        else:
+            # Regular monster: 30% chance to advance floor
+            if random.random() < 0.30:
+                new_floor = battle["floor_num"] + 1
+                await db.update_floor(interaction.user.id, interaction.guild.id, new_floor)
+                floor_advanced = True
 
         # Build victory embed
         embed = discord.Embed(
@@ -303,7 +312,7 @@ class AdventureCog(commands.Cog):
         if pet_level_up:
             embed.add_field(name="🐾 Pet Level Up!", value="Pet kamu naik level!", inline=False)
 
-        if battle["is_boss"]:
+        if floor_advanced:
             embed.add_field(
                 name="🗺️ Floor Baru!",
                 value=f"Floor **{battle['floor_num']}** → **{battle['floor_num'] + 1}** terbuka!",
