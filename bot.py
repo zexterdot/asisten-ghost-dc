@@ -7,6 +7,7 @@ import asyncio
 from datetime import datetime, timedelta
 import re
 import random
+import database as db
 
 # Load environment variables
 load_dotenv()
@@ -34,11 +35,33 @@ async def on_ready():
     print(f'[ID] Bot ID: {bot.user.id}')
     print('-' * 40)
 
+    # Initialize database
+    await db.init_db()
+
+    # Load RPG cogs
+    cog_list = [
+        'cogs.character',
+        'cogs.adventure',
+        'cogs.inventory',
+        'cogs.shop',
+        'cogs.pets',
+        'cogs.pvp',
+        'cogs.games',
+        'cogs.economy',
+        'cogs.leaderboard',
+    ]
+    for cog in cog_list:
+        try:
+            await bot.load_extension(cog)
+            print(f'[COG] Loaded {cog}')
+        except Exception as e:
+            print(f'[ERROR] Failed to load {cog}: {e}')
+
     # Set bot status
     await bot.change_presence(
         activity=discord.Activity(
-            type=discord.ActivityType.listening,
-            name="orders from the boss fiqrix"
+            type=discord.ActivityType.playing,
+            name="/start untuk mulai RPG! ⚔️"
         )
     )
 
@@ -48,6 +71,12 @@ async def on_ready():
         print(f'[SYNC] Synced {len(synced)} slash command(s)')
     except Exception as e:
         print(f'[ERROR] Failed to sync commands: {e}')
+
+
+@bot.event
+async def on_close():
+    """Graceful shutdown."""
+    await db.close_db()
 
 
 @bot.event
@@ -718,35 +747,116 @@ async def slash_help(interaction: discord.Interaction):
     )
 
     embed.add_field(
+        name="🎮 RPG — Memulai",
+        value=(
+            "`/start` \u2014 Buat karakter baru\n"
+            "`/profile` \u2014 Lihat profil RPG\n"
+            "`/stats` \u2014 Detail stats karakter\n"
+            "`/heal` \u2014 Pulihkan HP"
+        ),
+        inline=True
+    )
+
+    embed.add_field(
+        name="⚔️ Adventure",
+        value=(
+            "`/adventure` \u2014 Jelajahi dungeon\n"
+            "`/boss` \u2014 Tantang boss\n"
+        ),
+        inline=True
+    )
+
+    embed.add_field(
+        name="🎒 Item & Shop",
+        value=(
+            "`/inventory` \u2014 Lihat inventory\n"
+            "`/equip` \u2014 Pasang equipment\n"
+            "`/unequip` \u2014 Lepas equipment\n"
+            "`/use` \u2014 Pakai consumable\n"
+            "`/shop` \u2014 Lihat shop\n"
+            "`/buy` \u2014 Beli item\n"
+            "`/sell` \u2014 Jual item"
+        ),
+        inline=True
+    )
+
+    embed.add_field(
+        name="🐾 Pet",
+        value=(
+            "`/gacha` \u2014 Gacha pet (100 🪙)\n"
+            "`/gacha10` \u2014 10x Gacha (900 🪙)\n"
+            "`/pets` \u2014 Lihat pet\n"
+            "`/setpet` \u2014 Aktifkan pet\n"
+            "`/namepet` \u2014 Beri nama pet\n"
+            "`/feedpet` \u2014 Beri makan pet"
+        ),
+        inline=True
+    )
+
+    embed.add_field(
+        name="⚔️ PvP",
+        value=(
+            "`/duel` \u2014 Tantang duel PvP\n"
+            "`/pvpstats` \u2014 Lihat stats PvP"
+        ),
+        inline=True
+    )
+
+    embed.add_field(
+        name="🎰 Mini-Games",
+        value=(
+            "`/trivia` \u2014 Quiz trivia\n"
+            "`/rps` \u2014 Batu-Kertas-Gunting\n"
+            "`/coinflip` \u2014 Lempar koin\n"
+            "`/slots` \u2014 Slot machine\n"
+            "`/mathquiz` \u2014 Soal matematika\n"
+            "`/wordscramble` \u2014 Susun huruf"
+        ),
+        inline=True
+    )
+
+    embed.add_field(
+        name="💰 Ekonomi",
+        value=(
+            "`/daily` \u2014 Hadiah harian\n"
+            "`/balance` \u2014 Cek saldo\n"
+            "`/give` \u2014 Transfer coins"
+        ),
+        inline=True
+    )
+
+    embed.add_field(
+        name="🏆 Leaderboard",
+        value=(
+            "`/leaderboard` \u2014 Top 10\n"
+            "`/rank` \u2014 Posisi rank\n"
+            "`/top` \u2014 Quick top 3"
+        ),
+        inline=True
+    )
+
+    embed.add_field(
         name="\u2709\ufe0f  Messaging",
         value=(
-            "`/say` \u2014 Kirim pesan multi-line (bisa reply)\n"
+            "`/say` \u2014 Kirim pesan multi-line\n"
             "`/clear` \u2014 Hapus pesan di channel"
         ),
-        inline=False
+        inline=True
     )
 
     embed.add_field(
-        name="\u2728  Giveaway",
+        name="✨ Giveaway",
         value=(
-            "`/createga` \u2014 Buat giveaway dengan embed\n"
-            "`/pickwinner` \u2014 Pilih pemenang dari react\n"
-            "`/reroll` \u2014 Pilih ulang pemenang"
+            "`/createga` \u2014 Buat giveaway\n"
+            "`/pickwinner` \u2014 Pilih pemenang\n"
+            "`/reroll` \u2014 Pilih ulang\n"
+            "`/poll` \u2014 Buat polling"
         ),
-        inline=False
-    )
-
-    embed.add_field(
-        name="\u2611\ufe0f  Utility",
-        value=(
-            "`/poll` \u2014 Buat polling dengan reactions\n"
-            "`/help` \u2014 Tampilkan daftar command ini"
-        ),
-        inline=False
+        inline=True
     )
 
     embed.set_footer(
-        text="Ghost Assistant \u2022 v2.0",
+        text="Ghost Assistant RPG \u2022 v3.0 \u2022 /start untuk mulai!",
         icon_url=bot.user.display_avatar.url
     )
 
